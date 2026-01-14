@@ -1,10 +1,403 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Monitoring Beladiri Pesantren</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Beladiri Pesantren</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* --- 2. CSS SEDERHANA --- */
+        :root {
+            --primary: #1e4d2b; /* Hijau Pesantren */
+            --secondary: #f4f4f4;
+            --accent: #d4af37; /* Emas */
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--secondary);
+            color: var(--text);
+        }
+
+        /* Header */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-placeholder {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Menu Titik Tiga */
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-content button {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dropdown-content button:hover {background-color: #ddd;}
+
+        /* Halaman & Kontainer */
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .page {
+            display: none; /* Sembunyikan semua halaman secara default */
+            animation: fadeIn 0.5s;
+        }
+
+        .active {
+            display: block; /* Tampilkan halaman aktif */
+        }
+
+        /* Login & Form */
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+
+        .btn:hover { background-color: #14361e; }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+        /* Dashboard Items */
+        .realtime-clock {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number { font-size: 24px; font-weight: bold; color: var(--accent); }
+
+        /* Tabel */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: var(--primary); color: white; }
+
+        /* Sertifikat */
+        #certificate-preview {
+            border: 10px solid var(--primary);
+            padding: 40px;
+            text-align: center;
+            background: white;
+            display: none; /* Sembunyi sampai tombol diklik */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
 </head>
 <body>
-  <h1>Monitoring Beladiri Pesantren</h1>
-  <p>Website pemantauan latihan santri</p>
+
+    <header>
+        <div class="brand">
+            <div class="logo-placeholder">P</div>
+            <div>
+                <div style="font-weight: bold;">Tapak Suci</div>
+                <div style="font-size: 12px;">Ponpes Al-Ikhlas</div>
+            </div>
+        </div>
+        
+        <div class="menu-container" id="menuContainer" style="display: none;">
+            <button class="menu-btn" onclick="toggleMenu()">&#8942;</button>
+            <div id="myDropdown" class="dropdown-content">
+                <button onclick="showPage('dashboard')">🏠 Dashboard</button>
+                <button onclick="showPage('biodata')">👤 Biodata Santri</button>
+                <button onclick="fetchStructure()">👥 Struktur Pengurus</button>
+                <button onclick="showPage('program')">📅 Program Latihan</button>
+                <button onclick="fetchFees()">💰 Tabel Iuran</button>
+                <button onclick="showPage('gallery')">📷 Dokumentasi</button>
+                <button onclick="showPage('certificate')">🎓 Sertifikat</button>
+                <button onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <div id="login-page" class="page active">
+            <div class="card">
+                <h2>Selamat Datang</h2>
+                <p>Sistem Informasi & Monitoring Beladiri Santri</p>
+                <button class="btn" onclick="showPage('dashboard', true)">Login (Masuk)</button>
+                <button class="btn btn-outline" onclick="showPage('register')">Daftar Akun</button>
+            </div>
+        </div>
+
+        <div id="register-page" class="page">
+            <div class="card">
+                <h3>Pendaftaran Anggota Baru</h3>
+                <form onsubmit="handleRegister(event)">
+                    <input type="text" placeholder="Nama Lengkap" required>
+                    <input type="email" placeholder="Email" required>
+                    <input type="tel" placeholder="Nomor HP / WA" required>
+                    <input type="password" placeholder="Password" required>
+                    <br>
+                    <button type="submit" class="btn">Daftar</button>
+                    <button type="button" class="btn btn-outline" onclick="showPage('login-page')">Kembali</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="dashboard" class="page">
+            <div class="realtime-clock" id="clock">Memuat waktu...</div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div>Hadir</div>
+                    <div class="stat-number">12</div>
+                </div>
+                <div class="stat-box">
+                    <div>Sakit</div>
+                    <div class="stat-number" style="color: orange;">1</div>
+                </div>
+                <div class="stat-box">
+                    <div>Alpa</div>
+                    <div class="stat-number" style="color: red;">0</div>
+                </div>
+            </div>
+
+            <div class="card" style="text-align: left;">
+                <h3>📜 Sejarah Singkat</h3>
+                <p>
+                    Seni beladiri di pesantren ini didirikan pada tahun 2010 dengan tujuan membentuk santri yang kuat fisik dan mental.
+                    Menggabungkan nilai-nilai keislaman dengan ketangkasan jurus, kami bertekad mencetak pendekar yang berakhlak mulia.
+                </p>
+            </div>
+            
+            <div id="dynamic-content"></div>
+        </div>
+
+        <div id="biodata" class="page card"><h3>Biodata Santri</h3><p>Nama: Ahmad<br>Kelas: 2 Aliyah<br>Sabuk: Kuning</p></div>
+        <div id="program" class="page card"><h3>Program Latihan</h3><p>Minggu ini: Fokus Jurus Tunggal & Fisik.</p></div>
+        <div id="gallery" class="page card"><h3>Dokumentasi</h3><p>[Disini tempat foto kegiatan]</p></div>
+
+        <div id="certificate" class="page card">
+            <h3>Download Sertifikat</h3>
+            <p>Klik tombol di bawah untuk mengunduh e-Sertifikat kenaikan tingkat.</p>
+            
+            <div id="certificate-preview">
+                <h1>SERTIFIKAT KELULUSAN</h1>
+                <p>Diberikan kepada:</p>
+                <h2>AHMAD FULAN</h2>
+                <p>Telah Lulus Ujian Kenaikan Tingkat</p>
+                <h3>SABUK KUNING</h3>
+                <p>Pesantren Al-Ikhlas - 2024</p>
+            </div>
+            <br>
+            <button class="btn" onclick="downloadPDF()">Download PDF</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- FUNGSI WAKTU (REAL-TIME) ---
+        function updateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            const timeStr = now.toLocaleTimeString('id-ID');
+            document.getElementById('clock').innerHTML = `${dateStr} <br> ${timeStr}`;
+        }
+        setInterval(updateTime, 1000); // Update setiap 1 detik
+
+        // --- NAVIGASI HALAMAN ---
+        function showPage(pageId, isLoginAction = false) {
+            // Sembunyikan semua halaman
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(p => p.classList.remove('active')); // Hapus class active
+            
+            // Tampilkan halaman yang dipilih
+            const selectedPage = document.getElementById(pageId);
+            if(selectedPage) selectedPage.classList.add('active');
+
+            // Logika Menu
+            if (isLoginAction) {
+                document.getElementById('menuContainer').style.display = 'block'; // Munculkan menu titik 3
+                document.getElementById('login-page').style.display = 'none';
+            } else if (pageId === 'login-page') {
+                document.getElementById('menuContainer').style.display = 'none';
+            }
+
+            // Tutup dropdown menu jika terbuka
+            document.getElementById("myDropdown").style.display = "none";
+        }
+
+        function handleRegister(e) {
+            e.preventDefault(); // Mencegah reload halaman
+            alert("Pendaftaran berhasil! Silakan Login.");
+            showPage('login-page');
+        }
+
+        function logout() {
+            showPage('login-page');
+            document.getElementById('menuContainer').style.display = 'none';
+        }
+
+        // --- MENU LOGIC ---
+        function toggleMenu() {
+            const dropdown = document.getElementById("myDropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        // --- GOOGLE SHEETS FETCH (DATA DUMMY & LOGIC) ---
+        // Untuk menggunakan data asli, ganti URL di bawah dengan URL Google Sheet Anda
+        // Format: Publikasikan Google Sheet sebagai CSV/JSON
+        
+        function fetchStructure() {
+            // Simulasi mengambil data pengurus
+            const content = document.getElementById('dynamic-content');
+            showPage('dashboard');
+            content.innerHTML = `
+                <div class="card">
+                    <h3>Struktur Pengurus</h3>
+                    <ul>
+                        <li><b>Ketua:</b> Ustadz Budi</li>
+                        <li><b>Sekretaris:</b> Santri Andi</li>
+                        <li><b>Bendahara:</b> Santri Siti</li>
+                    </ul>
+                    <small>Data ini diambil dari simulasi database.</small>
+                </div>
+            `;
+        }
+
+        function fetchFees() {
+            // Simulasi Tabel Iuran (Biasanya ambil dari Google Sheets)
+            const content = document.getElementById('dynamic-content');
+            showPage('dashboard');
+            content.innerHTML = `
+                <div class="card">
+                    <h3>Laporan Iuran Bulanan</h3>
+                    <table>
+                        <tr>
+                            <th>Bulan</th>
+                            <th>Status</th>
+                            <th>Nominal</th>
+                        </tr>
+                        <tr><td>Januari</td><td>Lunas</td><td>Rp 20.000</td></tr>
+                        <tr><td>Februari</td><td>Lunas</td><td>Rp 20.000</td></tr>
+                        <tr><td>Maret</td><td style="color:red">Belum</td><td>-</td></tr>
+                    </table>
+                </div>
+            `;
+        }
+
+        // --- DOWNLOAD PDF ---
+        function downloadPDF() {
+            const element = document.getElementById('certificate-preview');
+            element.style.display = 'block'; // Tampilkan dulu untuk dirender
+            
+            var opt = {
+                margin:       1,
+                filename:     'Sertifikat-Santri.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+
+            // Gunakan library html2pdf
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.display = 'none'; // Sembunyikan lagi setelah download
+            });
+        }
+    </script>
 </body>
 </html>
